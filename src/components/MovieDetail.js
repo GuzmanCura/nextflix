@@ -33,7 +33,7 @@ const PageContainer = styled.div`
 const BackdropContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 560px;
+  height: 400px;
   overflow: hidden;
 `;
 
@@ -56,7 +56,7 @@ const Content = styled.div`
   margin-top: -200px;
   padding: 0 3rem 2rem;
   display: flex;
-  gap: 2rem;
+  gap: 4rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
@@ -326,6 +326,8 @@ const RelatedMoviesGrid = styled.div`
 const RelatedMovieCard = styled.div`
   cursor: pointer;
   transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: scale(1.05);
@@ -333,9 +335,9 @@ const RelatedMovieCard = styled.div`
 `;
 
 const RelatedMovieImage = styled(Image)`
-  aspect-ratio: 2/3;
   width: 100%;
   height: auto;
+  position: relative;
   object-fit: cover;
   border-radius: 8px;
 `;
@@ -353,7 +355,7 @@ const RelatedMovieYear = styled.span`
 `;
 
 const RelatedMovieInfo = styled.div`
-  padding: 0.75rem;
+  padding: 0.75rem 0;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;

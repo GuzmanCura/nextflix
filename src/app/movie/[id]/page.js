@@ -174,8 +174,16 @@ export default function MoviePage({ params }) {
         const foundMovie = movies.find(m => m.movieSlug === params.id);
         
         if (foundMovie && isMounted) {
+          console.log('Found movie:', {
+            title: foundMovie.title,
+            director: foundMovie.director,
+            cast: foundMovie.cast?.slice(0, 3),
+            totalMovies: movies.length
+          });
+
           // Find related movies based on director and top 3 actors
           const topActors = foundMovie.cast?.slice(0, 3) || [];
+          console.log('Top actors for related movies:', topActors);
 
           const relatedMovies = movies
             .filter(m => 
@@ -207,6 +215,17 @@ export default function MoviePage({ params }) {
               // Third priority: Year (newer movies first)
               return b.year - a.year;
             });
+          
+          console.log('Related movies found:', {
+            count: relatedMovies.length,
+            movies: relatedMovies.map(m => ({
+              title: m.title,
+              director: m.director,
+              sharedActors: topActors.filter(actor => 
+                m.cast?.some(movieActor => movieActor.name === actor.name)
+              ).map(a => a.name)
+            }))
+          });
           
           const movieWithRelated = { ...foundMovie, relatedMovies };
           if (isMounted) {
