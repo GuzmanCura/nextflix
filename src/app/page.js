@@ -138,6 +138,18 @@ const Loading = styled.p`
   max-width: 600px;
 `;
 
+const LogoContainer = styled.div`
+  display: flex;
+  width: 100%;
+  padding: 2rem;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Logo = styled.img`
+  width: 200px;
+`;
+
 export default function Home() {
   const router = useRouter();
   const [movies, setMovies] = useState([]);
@@ -380,10 +392,11 @@ export default function Home() {
   return (
     <Main>
       <Container>
-        <Title>Nextflix</Title>
-        <Description>
-          Load your Letterboxd list and get a random movie suggestion
-        </Description>
+        <LogoContainer>
+          <Logo
+            src='./logo.png'
+          />
+        </LogoContainer>
 
         <InputContainer>
           <Input
