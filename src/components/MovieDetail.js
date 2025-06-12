@@ -474,50 +474,78 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
   animation: ${fadeIn} 0.3s ease-out;
+  backdrop-filter: blur(5px);
 `;
 
 const ModalContent = styled.div`
-  background: #1a1a1a;
+  background: #181818;
   border-radius: 8px;
-  padding: 2rem;
-  max-width: 600px;
+  padding: 2.5rem;
+  max-width: 700px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   position: relative;
   animation: ${slideUp} 0.3s ease-out;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
 `;
 
 const CloseButton = styled.button`
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 1.5rem;
+  right: 1.5rem;
   background: none;
   border: none;
   color: #b3b3b3;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   cursor: pointer;
   padding: 0.5rem;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 
   &:hover {
     color: white;
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 
 const FullReviewContent = styled.div`
   color: #b3b3b3;
-  line-height: 1.6;
-  font-size: 1rem;
-  margin-top: 1rem;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+  padding: 0 0.5rem;
 
   strong, b {
     color: white;
@@ -542,14 +570,46 @@ const FullReviewContent = styled.div`
 
   blockquote {
     border-left: 3px solid #e50914;
-    margin: 1rem 0;
-    padding: 0.5rem 0 0.5rem 1rem;
+    margin: 1.5rem 0;
+    padding: 0.75rem 0 0.75rem 1.5rem;
     color: #e0e0e0;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 4px 4px 0;
   }
 
   p {
-    margin: 0.5rem 0;
+    margin: 1rem 0;
   }
+`;
+
+const ModalReviewHeader = styled(ReviewHeader)`
+  padding: 0 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1.5rem;
+`;
+
+const ModalReviewerImagePlaceholder = styled(ReviewerImagePlaceholder)`
+  width: 56px;
+  height: 56px;
+  font-size: 1.4rem;
+`;
+
+const ModalReviewerInfo = styled(ReviewerInfo)`
+  gap: 0.5rem;
+`;
+
+const ModalReviewerName = styled(ReviewerName)`
+  font-size: 1.2rem;
+`;
+
+const ModalReviewDate = styled(ReviewDate)`
+  font-size: 0.9rem;
+`;
+
+const ModalReviewRating = styled(ReviewRating)`
+  font-size: 1.1rem;
 `;
 
 const ViewMoreReviewsButton = styled.button`
@@ -853,21 +913,21 @@ export default function MovieDetail({ movie }) {
         <ModalOverlay onClick={handleCloseModal}>
           <ModalContent onClick={e => e.stopPropagation()}>
             <CloseButton onClick={handleCloseModal}>×</CloseButton>
-            <ReviewHeader>
-              <ReviewerImagePlaceholder>
+            <ModalReviewHeader>
+              <ModalReviewerImagePlaceholder>
                 {selectedReview.reviewer.charAt(0)}
-              </ReviewerImagePlaceholder>
-              <ReviewerInfo>
-                <ReviewerName>{selectedReview.reviewer}</ReviewerName>
-                <ReviewDate>{new Date(selectedReview.date).toLocaleDateString()}</ReviewDate>
-              </ReviewerInfo>
+              </ModalReviewerImagePlaceholder>
+              <ModalReviewerInfo>
+                <ModalReviewerName>{selectedReview.reviewer}</ModalReviewerName>
+                <ModalReviewDate>{new Date(selectedReview.date).toLocaleDateString()}</ModalReviewDate>
+              </ModalReviewerInfo>
               {selectedReview.rating > 0 && (
-                <ReviewRating>
+                <ModalReviewRating>
                   <StarIcon>★</StarIcon>
                   {selectedReview.rating.toFixed(1)}
-                </ReviewRating>
+                </ModalReviewRating>
               )}
-            </ReviewHeader>
+            </ModalReviewHeader>
             <FullReviewContent 
               dangerouslySetInnerHTML={{ 
                 __html: processReviewContent(selectedReview.content) 

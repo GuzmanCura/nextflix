@@ -179,7 +179,7 @@ export async function GET(request) {
           tmdbLinkHref: tmdbLink?.href
         });
 
-        const letterboxdApiUrl = `https://letterboxd.com/film/${movieSlug}/reviews/by/activity/`;
+        const letterboxdApiUrl = `https://letterboxd.com/film/${movieSlug}/`;
         console.log('Fetching reviews from:', letterboxdApiUrl);
         
         let reviews = [];
@@ -197,94 +197,81 @@ export async function GET(request) {
 
           console.log('Reviews response status:', reviewsResponse.status);
           console.log('Reviews response ok:', reviewsResponse.ok);
-          console.log('Reviews response headers:', Object.fromEntries(reviewsResponse.headers.entries()));
 
           if (reviewsResponse.ok) {
             const reviewsHtml = await reviewsResponse.text();
-            console.log('Reviews HTML length:', reviewsHtml.length);
-            console.log('First 500 characters of HTML:', reviewsHtml.substring(0, 500));
-            
             const reviewsDom = new JSDOM(reviewsHtml);
             const reviewsDoc = reviewsDom.window.document;
 
-            const popularReviewsSection = reviewsDoc.querySelector('.film-detail-content');
-            console.log('Found popular reviews section:', !!popularReviewsSection);
-
+            // Find the Popular Reviews section and get its AJAX URL
+            const popularReviewsSection = reviewsDoc.querySelector('.js-popular-reviews');
+            console.log('Popular reviews section found:', !!popularReviewsSection);
+            
             if (popularReviewsSection) {
-              const reviewContainers = popularReviewsSection.querySelectorAll('.film-detail');
-              console.log('Found review containers:', reviewContainers.length);
+              const reviewsUrl = popularReviewsSection.getAttribute('data-url');
+              console.log('Found reviews URL:', reviewsUrl);
 
-              if (reviewContainers.length > 0) {
-                reviews = Array.from(reviewContainers)
-                  .map(container => {
-                    const reviewText = container.querySelector('.body-text')?.textContent?.trim() || '';
-                    
-                    const reviewerName = container.querySelector('.name')?.textContent?.trim() || 'Anonymous';
-                    
-                    const ratingElement = container.querySelector('.rating');
-                    const rating = ratingElement ? parseFloat(ratingElement.textContent.trim()) : 0;
-                    
-                    const dateElement = container.querySelector('time');
-                    const date = dateElement?.getAttribute('datetime') || new Date().toISOString();
-                    
-                    const avatarElement = container.querySelector('.avatar');
-                    const avatarUrl = avatarElement?.src || null;
+              if (reviewsUrl) {
+                // Fetch the reviews from the AJAX endpoint
+                const ajaxReviewsResponse = await fetch(`https://letterboxd.com${reviewsUrl}`, {
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Connection': 'keep-alive',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  }
+                });
 
-                    console.log('Processing review:', {
-                      reviewer: reviewerName,
-                      hasContent: !!reviewText,
-                      contentLength: reviewText.length,
-                      rating,
-                      date,
-                      hasAvatar: !!avatarUrl,
-                      containerHtml: container.innerHTML.substring(0, 200)
-                    });
+                if (ajaxReviewsResponse.ok) {
+                  const ajaxReviewsHtml = await ajaxReviewsResponse.text();
+                  const ajaxReviewsDom = new JSDOM(ajaxReviewsHtml);
+                  const ajaxReviewsDoc = ajaxReviewsDom.window.document;
 
-                    return {
-                      id: container?.id || Math.random().toString(36).substr(2, 9),
-                      reviewer: reviewerName,
-                      rating,
-                      date,
-                      content: reviewText,
-                      profilePath: avatarUrl
-                    };
-                  })
-                  .filter(review => review.content.length > 0);
+                  const reviewContainers = ajaxReviewsDoc.querySelectorAll('.js-listitem');
+                  console.log('Found review containers:', reviewContainers.length);
 
-                reviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-                reviews = reviews.slice(0, 6);
+                  if (reviewContainers.length > 0) {
+                    reviews = Array.from(reviewContainers)
+                      .map(container => {
+                        const reviewText = container.querySelector('.js-review-body')?.textContent?.trim() || '';
+                        const reviewerName = container.querySelector('.displayname')?.textContent?.trim() || 'Anonymous';
+                        const ratingElement = container.querySelector('.rating');
+                        const rating = ratingElement ? 
+                          (ratingElement.textContent.includes('★') ? 
+                            ratingElement.textContent.split('★').length - 1 : 0) : 0;
+                        const dateElement = container.querySelector('time');
+                        const date = dateElement?.getAttribute('datetime') || new Date().toISOString();
+                        const avatarElement = container.querySelector('.avatar img');
+                        const avatarUrl = avatarElement?.src || null;
 
-                console.log('Final processed reviews:', reviews);
-                console.log('Number of reviews after processing:', reviews.length);
-              } else {
-                const mainContent = reviewsDoc.querySelector('.film-detail-content');
-                if (mainContent) {
-                  console.log('Found main content area, HTML structure:', mainContent.innerHTML.substring(0, 500));
+                        console.log('Processing review:', {
+                          reviewer: reviewerName,
+                          hasContent: !!reviewText,
+                          contentLength: reviewText.length,
+                          rating,
+                          date,
+                          hasAvatar: !!avatarUrl
+                        });
+
+                        return {
+                          id: container?.querySelector('.js-production-viewing')?.getAttribute('data-viewing-id') || Math.random().toString(36).substr(2, 9),
+                          reviewer: reviewerName,
+                          rating,
+                          date,
+                          content: reviewText,
+                          profilePath: avatarUrl
+                        };
+                      })
+                      .filter(review => review.content.length > 0);
+
+                    reviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    reviews = reviews.slice(0, 6);
+                    console.log('Final processed reviews:', reviews.length);
+                  }
                 }
-                console.log('No review containers found. Available classes:', 
-                  Array.from(reviewsDoc.querySelectorAll('*'))
-                    .map(el => el.className)
-                    .filter(Boolean)
-                    .join(', ')
-                );
               }
-            } else {
-              console.log('No popular reviews section found. Available sections:', 
-                Array.from(reviewsDoc.querySelectorAll('section'))
-                  .map(section => ({
-                    id: section.id,
-                    class: section.className,
-                    firstChild: section.firstElementChild?.className
-                  }))
-              );
             }
-          } else {
-            const errorText = await reviewsResponse.text();
-            console.error('Failed to fetch reviews:', {
-              status: reviewsResponse.status,
-              statusText: reviewsResponse.statusText,
-              error: errorText
-            });
           }
         } catch (error) {
           console.error('Error fetching reviews:', error);

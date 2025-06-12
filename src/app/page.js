@@ -11,9 +11,13 @@ const Main = styled.main`
   min-height: 100vh;
   background: #141414;
   color: white;
-  padding: 2rem;
+  padding: 2rem 1rem;
   overflow: hidden;
   display: block;
+
+  @media (min-width: 768px) {
+    padding: 3rem 2rem;
+  }
 `;
 
 const Container = styled.div`
@@ -24,72 +28,114 @@ const Container = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #e50914;
+  letter-spacing: -0.5px;
+  
+  @media (min-width: 768px) {
+    font-size: 3.5rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const Description = styled.p`
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   color: #b3b3b3;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+  
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+    margin-bottom: 3rem;
+  }
 `;
 
 const InputContainer = styled.div`
   display: flex;
+  flex-direction: column;
   gap: 1rem;
   max-width: 600px;
-  margin: 0 auto 2rem;
+  margin: 0 auto 2.5rem;
+  width: 100%;
+  
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 1rem;
+  }
 `;
 
 const Input = styled.input`
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.25rem;
   font-size: 1rem;
   border: 2px solid #333;
-  border-radius: 4px;
+  border-radius: 8px;
   background: #1a1a1a;
   color: white;
+  transition: all 0.2s ease;
+  width: 100%;
 
   &:focus {
     outline: none;
     border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+  }
+
+  &::placeholder {
+    color: #666;
   }
 `;
 
 const Button = styled.button`
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   font-size: 1rem;
   font-weight: 600;
   color: white;
   background: #e50914;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  width: 100%;
+  
+  @media (min-width: 768px) {
+    width: auto;
+  }
 
   &:hover {
     background: #f40612;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
 const Error = styled.p`
   color: #e50914;
   text-align: center;
-  margin: 1rem 0;
+  margin: 1rem auto;
   padding: 1rem;
   background: rgba(229, 9, 20, 0.1);
-  border-radius: 4px;
+  border-radius: 8px;
+  max-width: 600px;
 `;
 
 const Loading = styled.p`
   color: #b3b3b3;
   text-align: center;
-  margin: 1rem 0;
+  margin: 1rem auto;
   font-size: 1.2rem;
+  max-width: 600px;
 `;
 
 export default function Home() {
