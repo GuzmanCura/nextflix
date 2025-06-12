@@ -594,7 +594,8 @@ export default function MovieDetail({ movie }) {
     hasReviews: !!movie.reviews,
     reviewsCount: movie.reviews?.length,
     reviews: movie.reviews,
-    visibleReviewsCount: visibleReviews?.length
+    visibleReviewsCount: visibleReviews?.length,
+    movieSlug: movie.movieSlug
   });
 
   const handleRelatedMovieClick = (movieSlug) => {
@@ -792,7 +793,11 @@ export default function MovieDetail({ movie }) {
 
       <ReviewsSection>
         <ReviewsHeader>Top Reviews</ReviewsHeader>
-        {movie.reviews && movie.reviews.length > 0 ? (
+        {!movie.reviews ? (
+          <p style={{ color: '#b3b3b3', textAlign: 'center', padding: '2rem' }}>
+            Loading reviews...
+          </p>
+        ) : movie.reviews.length > 0 ? (
           <>
             <ReviewsGrid>
               {visibleReviews.map((review, index) => {
@@ -801,7 +806,9 @@ export default function MovieDetail({ movie }) {
                   reviewer: review.reviewer,
                   hasContent: !!review.content,
                   contentLength: review.content?.length,
-                  rating: review.rating
+                  rating: review.rating,
+                  date: review.date,
+                  id: review.id
                 });
                 return (
                   <ReviewCard key={review.id || index}>
