@@ -2,8 +2,28 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { useRouter } from 'next/navigation';
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+const slideUp = keyframes`
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+`;
 
 const PageContainer = styled.div`
   position: relative;
@@ -313,34 +333,304 @@ const RelatedMovieCard = styled.div`
 `;
 
 const RelatedMovieImage = styled(Image)`
+  aspect-ratio: 2/3;
   width: 100%;
   height: auto;
-  aspect-ratio: 2/3;
   object-fit: cover;
   border-radius: 8px;
 `;
 
-const RelatedMovieTitle = styled.h4`
-  margin: 0.5rem 0 0;
+const RelatedMovieTitle = styled.h3`
+  margin: 0;
   font-size: 1rem;
+  font-weight: 500;
+  color: white;
 `;
 
 const RelatedMovieYear = styled.span`
-  color: #b3b3b3;
   font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+`;
+
+const RelatedMovieInfo = styled.div`
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const ReviewsSection = styled.div`
+  margin-top: 3rem;
+  padding: 3rem;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 1;
+  background: #141414;
+`;
+
+const ReviewsHeader = styled.h3`
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: white;
+`;
+
+const ReviewsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+`;
+
+const ReviewCard = styled.div`
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+`;
+
+const ReadReviewLink = styled.button`
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+  margin-top: 1rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  &:hover {
+    color: #e0e0e0;
+  }
+`;
+
+const ReviewHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const ReviewerImage = styled(Image)`
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+`;
+
+const ReviewerImagePlaceholder = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e50914;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+`;
+
+const ReviewerInfo = styled.div`
+  flex: 1;
+`;
+
+const ReviewerName = styled.h4`
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+`;
+
+const ReviewDate = styled.p`
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #b3b3b3;
+`;
+
+const ReviewRating = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #ffd700;
+  font-weight: 600;
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: ${fadeIn} 0.3s ease-out;
+`;
+
+const ModalContent = styled.div`
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: ${slideUp} 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: white;
+  }
+`;
+
+const FullReviewContent = styled.div`
+  color: #b3b3b3;
+  line-height: 1.6;
+  font-size: 1rem;
+  margin-top: 1rem;
+
+  strong, b {
+    color: white;
+    font-weight: 600;
+  }
+
+  em, i {
+    font-style: italic;
+    color: #e0e0e0;
+  }
+
+  a {
+    color: #e50914;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #ff0f1a;
+      text-decoration: underline;
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid #e50914;
+    margin: 1rem 0;
+    padding: 0.5rem 0 0.5rem 1rem;
+    color: #e0e0e0;
+  }
+
+  p {
+    margin: 0.5rem 0;
+  }
+`;
+
+const ViewMoreReviewsButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 100px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+  margin: 2rem auto;
+  display: block;
+  width: fit-content;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const NoRelatedMovies = styled.div`
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin: 1rem 0;
 `;
 
 export default function MovieDetail({ movie }) {
   const [showAllCast, setShowAllCast] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [showMoreRelated, setShowMoreRelated] = useState(false);
   const visibleCast = showAllCast ? movie.cast : movie.cast.slice(0, 8);
+  const visibleReviews = showAllReviews ? movie.reviews : movie.reviews?.slice(0, 3);
+  const visibleRelatedMovies = showMoreRelated ? movie.relatedMovies.slice(0, 8) : movie.relatedMovies.slice(0, 4);
   const router = useRouter();
 
+  console.log('MovieDetail - Full movie object:', {
+    title: movie.title,
+    hasReviews: !!movie.reviews,
+    reviewsCount: movie.reviews?.length,
+    reviews: movie.reviews,
+    visibleReviewsCount: visibleReviews?.length
+  });
+
   const handleRelatedMovieClick = (movieSlug) => {
-    router.push(`/movie/${movieSlug}`);
+    router.push(`/movie/${movieSlug}?from=${movie.movieSlug}&fromTitle=${encodeURIComponent(movie.title)}`);
   };
 
-  console.log('MovieDetail - Full movie object:', movie);
-  console.log('MovieDetail - Related Movies:', movie.relatedMovies);
+  const handleReviewClick = (review) => {
+    setSelectedReview(review);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedReview(null);
+  };
+
+  const processReviewContent = (content) => {
+    if (!content) return '';
+    
+    // Process bold text (**text** or __text__)
+    content = content.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>');
+    
+    // Process italic text (*text* or _text_)
+    content = content.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>');
+    
+    // Process links [text](url)
+    content = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Process blockquotes (> text)
+    content = content.replace(/^>\s*(.*)$/gm, '<blockquote>$1</blockquote>');
+    
+    // Convert line breaks to paragraphs
+    content = content.split('\n\n').map(paragraph => 
+      paragraph.trim() ? `<p>${paragraph}</p>` : ''
+    ).join('');
+    
+    return content;
+  };
 
   return (
     <PageContainer>
@@ -468,30 +758,114 @@ export default function MovieDetail({ movie }) {
         <RelatedMoviesSection>
           <RelatedMoviesHeader>More Like This</RelatedMoviesHeader>
           <RelatedMoviesGrid>
-            {movie.relatedMovies.map((relatedMovie, index) => (
-              <RelatedMovieCard 
-                key={index}
-                onClick={() => handleRelatedMovieClick(relatedMovie.movieSlug)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handleRelatedMovieClick(relatedMovie.movieSlug);
-                  }
-                }}
-              >
-                <RelatedMovieImage
-                  src={relatedMovie.posterUrl}
-                  alt={relatedMovie.title}
-                  width={200}
-                  height={300}
-                />
-                <RelatedMovieTitle>{relatedMovie.title}</RelatedMovieTitle>
-                <RelatedMovieYear>({relatedMovie.year})</RelatedMovieYear>
-              </RelatedMovieCard>
-            ))}
+            {movie.relatedMovies && movie.relatedMovies.length > 0 ? (
+              visibleRelatedMovies.map((relatedMovie) => (
+                <RelatedMovieCard
+                  key={relatedMovie.movieSlug}
+                  onClick={() => handleRelatedMovieClick(relatedMovie.movieSlug)}
+                >
+                  <RelatedMovieImage
+                    src={relatedMovie.posterUrl}
+                    alt={relatedMovie.title}
+                    width={200}
+                    height={300}
+                  />
+                  <RelatedMovieInfo>
+                    <RelatedMovieTitle>{relatedMovie.title}</RelatedMovieTitle>
+                    <RelatedMovieYear>{relatedMovie.year}</RelatedMovieYear>
+                  </RelatedMovieInfo>
+                </RelatedMovieCard>
+              ))
+            ) : (
+              <NoRelatedMovies>
+                No related movies found
+              </NoRelatedMovies>
+            )}
           </RelatedMoviesGrid>
+          {movie.relatedMovies && movie.relatedMovies.length > 4 && (
+            <ViewMoreReviewsButton onClick={() => setShowMoreRelated(!showMoreRelated)}>
+              {showMoreRelated ? 'Show Less' : 'Show More'}
+            </ViewMoreReviewsButton>
+          )}
         </RelatedMoviesSection>
+      )}
+
+      <ReviewsSection>
+        <ReviewsHeader>Top Reviews</ReviewsHeader>
+        {movie.reviews && movie.reviews.length > 0 ? (
+          <>
+            <ReviewsGrid>
+              {visibleReviews.map((review, index) => {
+                console.log('Rendering review:', {
+                  index,
+                  reviewer: review.reviewer,
+                  hasContent: !!review.content,
+                  contentLength: review.content?.length,
+                  rating: review.rating
+                });
+                return (
+                  <ReviewCard key={review.id || index}>
+                    <ReviewHeader>
+                      <ReviewerImagePlaceholder>
+                        {review.reviewer.charAt(0)}
+                      </ReviewerImagePlaceholder>
+                      <ReviewerInfo>
+                        <ReviewerName>{review.reviewer}</ReviewerName>
+                        <ReviewDate>{new Date(review.date).toLocaleDateString()}</ReviewDate>
+                      </ReviewerInfo>
+                      {review.rating > 0 && (
+                        <ReviewRating>
+                          <StarIcon>★</StarIcon>
+                          {review.rating.toFixed(1)}
+                        </ReviewRating>
+                      )}
+                    </ReviewHeader>
+                    <ReadReviewLink onClick={() => handleReviewClick(review)}>
+                      Read Review
+                    </ReadReviewLink>
+                  </ReviewCard>
+                );
+              })}
+            </ReviewsGrid>
+            {movie.reviews.length > 3 && (
+              <ViewMoreReviewsButton onClick={() => setShowAllReviews(!showAllReviews)}>
+                {showAllReviews ? 'Show Less Reviews' : 'View More Reviews'}
+              </ViewMoreReviewsButton>
+            )}
+          </>
+        ) : (
+          <p style={{ color: '#b3b3b3', textAlign: 'center', padding: '2rem' }}>
+            No reviews available for this movie.
+          </p>
+        )}
+      </ReviewsSection>
+
+      {selectedReview && (
+        <ModalOverlay onClick={handleCloseModal}>
+          <ModalContent onClick={e => e.stopPropagation()}>
+            <CloseButton onClick={handleCloseModal}>×</CloseButton>
+            <ReviewHeader>
+              <ReviewerImagePlaceholder>
+                {selectedReview.reviewer.charAt(0)}
+              </ReviewerImagePlaceholder>
+              <ReviewerInfo>
+                <ReviewerName>{selectedReview.reviewer}</ReviewerName>
+                <ReviewDate>{new Date(selectedReview.date).toLocaleDateString()}</ReviewDate>
+              </ReviewerInfo>
+              {selectedReview.rating > 0 && (
+                <ReviewRating>
+                  <StarIcon>★</StarIcon>
+                  {selectedReview.rating.toFixed(1)}
+                </ReviewRating>
+              )}
+            </ReviewHeader>
+            <FullReviewContent 
+              dangerouslySetInnerHTML={{ 
+                __html: processReviewContent(selectedReview.content) 
+              }} 
+            />
+          </ModalContent>
+        </ModalOverlay>
       )}
     </PageContainer>
   );

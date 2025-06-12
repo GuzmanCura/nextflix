@@ -1,25 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styled from 'styled-components';
 import MovieDetail from '../../../components/MovieDetail';
 
 const Container = styled.div`
   min-height: 100vh;
   background: #141414;
-  color: white;
-  overflow-x: hidden;
   position: relative;
 `;
 
-const BackButton = styled.button`
+const LoadingContainer = styled(Container)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const NavigationContainer = styled.div`
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  z-index: 100;
+  display: flex;
+  gap: 1rem;
+`;
+
+const NavButton = styled.button`
   display: inline-flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  left: 1rem;
-  top: 1rem;
-  position: absolute;
   background: rgba(255, 255, 255, 0.2);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
@@ -29,7 +39,6 @@ const BackButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  z-index: 1;
 
   &:hover {
     background: rgba(255, 255, 255, 0.4);
@@ -52,115 +61,222 @@ const Error = styled.p`
   border-radius: 4px;
 `;
 
+const BackButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem;
+  padding-right: 1rem;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  & svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const BackIcon = styled.span`
+  margin-right: 0.5rem;
+`;
+
+const HomeButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  & svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const HomeIcon = styled.span`
+  margin-right: 0.5rem;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #e50914;
+  animation: spin 1s ease-in-out infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const ErrorMessage = styled.p`
+  color: #e50914;
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: rgba(229, 9, 20, 0.1);
+  border-radius: 4px;
+`;
+
 export default function MoviePage({ params }) {
-  const router = useRouter();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showBackButton, setShowBackButton] = useState(false);
+  const [fromTitle, setFromTitle] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const loadMovie = () => {
+    let isMounted = true;
+
+    const loadMovie = async () => {
+      if (!isMounted) return;
+      
       try {
-        const movies = JSON.parse(localStorage.getItem('movies') || '[]');
-        console.log('Looking for movie with slug:', params.id); // Debug log
-        console.log('Available movies:', movies.map(m => ({ title: m.title, slug: m.movieSlug }))); // Debug log
+        setLoading(true);
+        setError(null);
         
+        // Check if we came from a related movie
+        const searchParams = new URLSearchParams(window.location.search);
+        const from = searchParams.get('from');
+        const title = searchParams.get('fromTitle');
+        setShowBackButton(!!from);
+        setFromTitle(title || '');
+
+        const movies = JSON.parse(localStorage.getItem('movies') || '[]');
         const foundMovie = movies.find(m => m.movieSlug === params.id);
-        if (foundMovie) {
-          console.log('Found movie:', foundMovie); // Debug log
-          
-          // Find related movies based on director, genres, and cast
+        
+        if (foundMovie && isMounted) {
+          // Find related movies based on director and top 3 actors
+          const topActors = foundMovie.cast?.slice(0, 3) || [];
+
           const relatedMovies = movies
             .filter(m => 
               m.movieSlug !== params.id && // Exclude current movie
               (
                 m.director === foundMovie.director || // Same director
-                m.genres.some(genre => foundMovie.genres.includes(genre)) || // Shared genres
-                m.cast?.some(actor => foundMovie.cast?.some(foundActor => 
-                  foundActor.name === actor.name
-                )) // Shared cast members
+                topActors.some(actor => 
+                  m.cast?.some(movieActor => movieActor.name === actor.name)
+                ) // Has at least one of the top 3 actors
               )
             )
             .sort((a, b) => {
-              // Prioritize movies with same director
+              // First priority: Same director
               if (a.director === foundMovie.director && b.director !== foundMovie.director) return -1;
               if (b.director === foundMovie.director && a.director !== foundMovie.director) return 1;
               
-              // Then prioritize by number of shared cast members
-              const aSharedCast = a.cast?.filter(actor => 
-                foundMovie.cast?.some(foundActor => foundActor.name === actor.name)
-              ).length || 0;
-              const bSharedCast = b.cast?.filter(actor => 
-                foundMovie.cast?.some(foundActor => foundActor.name === actor.name)
-              ).length || 0;
-              if (aSharedCast !== bSharedCast) return bSharedCast - aSharedCast;
+              // Second priority: Number of shared top actors
+              const aSharedActors = topActors.filter(actor => 
+                a.cast?.some(movieActor => movieActor.name === actor.name)
+              ).length;
+              const bSharedActors = topActors.filter(actor => 
+                b.cast?.some(movieActor => movieActor.name === actor.name)
+              ).length;
               
-              // Finally sort by number of shared genres
-              const aSharedGenres = a.genres.filter(g => foundMovie.genres.includes(g)).length;
-              const bSharedGenres = b.genres.filter(g => foundMovie.genres.includes(g)).length;
-              return bSharedGenres - aSharedGenres;
-            })
-            .slice(0, 6); // Limit to 6 related movies
-          
-          console.log('Found related movies:', {
-            count: relatedMovies.length,
-            movies: relatedMovies.map(m => ({ 
-              title: m.title, 
-              director: m.director,
-              sharedCast: m.cast?.filter(actor => 
-                foundMovie.cast?.some(foundActor => foundActor.name === actor.name)
-              ).map(actor => actor.name) || []
-            }))
-          });
+              if (aSharedActors !== bSharedActors) {
+                return bSharedActors - aSharedActors;
+              }
+              
+              // Third priority: Year (newer movies first)
+              return b.year - a.year;
+            });
           
           const movieWithRelated = { ...foundMovie, relatedMovies };
-          console.log('Setting movie with related:', {
-            title: movieWithRelated.title,
-            hasRelatedMovies: !!movieWithRelated.relatedMovies,
-            relatedMoviesCount: movieWithRelated.relatedMovies?.length
-          });
-          
-          setMovie(movieWithRelated);
-        } else {
-          console.error('Movie not found with slug:', params.id); // Debug log
+          if (isMounted) {
+            setMovie(movieWithRelated);
+          }
+        } else if (isMounted) {
           setError('Movie not found');
         }
       } catch (err) {
-        console.error('Error loading movie:', err); // Debug log
-        setError('Failed to load movie details');
+        console.error('Error loading movie:', err);
+        if (isMounted) {
+          setError('Failed to load movie');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadMovie();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.id]);
 
   const handleBack = () => {
-    router.back();
+    if (showBackButton) {
+      router.back();
+    } else {
+      router.push('/');
+    }
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <Loading>Loading movie details...</Loading>
-      </Container>
-    );
-  }
+  const handleHome = () => {
+    router.push('/');
+  };
 
-  if (error) {
-    return (
-      <Container>
-        <BackButton onClick={handleBack}>← Back</BackButton>
-        <Error>{error}</Error>
-      </Container>
-    );
-  }
+  const handleRelatedMovieClick = (movieSlug) => {
+    router.push(`/movie/${movieSlug}?from=${params.id}&fromTitle=${encodeURIComponent(movie.title)}`);
+  };
 
   return (
     <Container>
-      <BackButton onClick={handleBack}>← Back</BackButton>
-      {movie && <MovieDetail movie={movie} />}
+      <NavigationContainer>
+        {showBackButton && (
+          <HomeButton onClick={handleHome}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </HomeButton>
+        )}
+        <BackButton onClick={handleBack}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          {showBackButton ? `${fromTitle}` : 'Back to Home'}
+        </BackButton>
+      </NavigationContainer>
+      {loading ? (
+        <LoadingContainer>
+          <LoadingSpinner />
+        </LoadingContainer>
+      ) : error ? (
+        <ErrorMessage>{error}</ErrorMessage>
+      ) : movie ? (
+        <MovieDetail movie={movie} />
+      ) : null}
     </Container>
   );
 } 
